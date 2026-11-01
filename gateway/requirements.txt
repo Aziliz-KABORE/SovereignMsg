@@ -1,0 +1,16 @@
+# SovereignMsg Gateway - Versions figées des dépendances (Python 3.12)
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+argon2-cffi==23.1.0
+pyotp==2.9.0
+PyJWT==2.10.1
+cryptography==44.0.0
+httpx==0.28.1
+pydantic==2.10.4
+pydantic-settings==2.7.0
+slowapi==0.1.9
+segno==1.6.1
+pytest==8.3.4
+pip-audit==2.7.3
