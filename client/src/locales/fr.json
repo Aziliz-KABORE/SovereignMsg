@@ -46,6 +46,47 @@
     },
     "logout": "Déconnexion"
   },
+  "admin": {
+    "dashboard": {
+      "title": "Tableau de bord",
+      "total_agents": "Total Agents",
+      "active_agents": "Agents Actifs",
+      "pending_agents": "En Attente d'Activation",
+      "revoked_agents": "Agents Révoqués",
+      "by_role": "Répartition des Rôles",
+      "enroll_action": "Enrôler un nouvel agent",
+      "list_action": "Consulter l'annuaire des agents",
+      "audit_action": "Consulter le journal d'audit infalsifiable"
+    },
+    "agents": {
+      "list_title": "Annuaire des Agents de l'Administration",
+      "search_placeholder": "Rechercher par nom ou e-mail...",
+      "all_statuses": "Tous les statuts",
+      "all_roles": "Tous les rôles",
+      "enroll_button": "Enrôler un agent",
+      "consult_button": "Consulter",
+      "no_agents": "Aucun agent correspondant."
+    },
+    "enrollment": {
+      "title": "Enrôlement d'un Nouvel Agent",
+      "success_title": "Agent Enrôlé avec Succès !",
+      "warning_title": "ATTENTION : LIEN D'ACTIVATION À USAGE UNIQUE",
+      "warning_message": "Ce lien contient le jeton d'activation sécurisé valable 48h. Il ne sera plus jamais réaffiché ni accessible après avoir quitté cette page. Transmettez-le immédiatement à l'agent via un canal souverain ou sécurisé.",
+      "link_label": "Lien d'activation à transmettre à l'agent :",
+      "copy_button": "Copier",
+      "copied": "✓ Copié !"
+    },
+    "audit": {
+      "title": "Journal d'Audit Infalsifiable (SHA-256)",
+      "all_actions": "Toutes les actions",
+      "verify_button": "Vérifier l'intégrité",
+      "verifying": "Vérification...",
+      "export_button": "Exporter CSV",
+      "chain_ok": "Chaîne cryptographique intègre",
+      "chain_ko": "Altération détectée !",
+      "readonly_note": "Lecture seule. Aucune entrée ne peut être modifiée ou supprimée depuis l'interface."
+    }
+  },
   "errors": {
     "access_denied_title": "Accès refusé",
     "access_denied_message": "Vous ne disposez pas des privilèges nécessaires pour accéder à cette section.",

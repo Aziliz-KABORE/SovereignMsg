@@ -94,3 +94,4 @@ describe("Service Matrix & Chiffrement E2EE", () => {
     expect(messages[1].estEchecDechiffrement).toBe(true);
   });
 });
+

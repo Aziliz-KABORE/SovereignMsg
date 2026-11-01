@@ -119,6 +119,61 @@ export interface AgentProfil {
   matrix_user_id: string;
 }
 
+// -----------------------------------------------------------------------------
+// Administration (P13 à P17)
+// -----------------------------------------------------------------------------
+export interface AdminStats {
+  total_agents: number;
+  actifs: number;
+  en_attente: number;
+  revoques: number;
+  par_role: Record<string, number>;
+}
+
+export interface AdminAgentItem {
+  id: string;
+  nom: string;
+  email: string;
+  role: string;
+  statut: string;
+  matrix_user_id: string;
+  date_creation: string;
+  date_revocation?: string | null;
+}
+
+export interface AgentCreatePayload {
+  nom: string;
+  email: string;
+  role: string;
+}
+
+export interface AgentCreateResult {
+  id: string;
+  nom: string;
+  email: string;
+  role: string;
+  statut: string;
+  matrix_user_id: string;
+  jeton_activation: string;
+}
+
+export interface AuditEntryItem {
+  id: string;
+  horodatage: string;
+  acteur: string;
+  action: string;
+  cible: string;
+  detail: string;
+  hash_precedent: string;
+  hash: string;
+}
+
+export interface AuditVerifyResult {
+  valide: boolean;
+  total_entrees: number;
+  message?: string;
+}
+
 export const apiLogin = async (payload: LoginPayload): Promise<LoginResult> => {
   const { data } = await apiClient.post<LoginResult>("/auth/login", payload);
   return data;
@@ -138,3 +193,50 @@ export const apiGetMe = async (): Promise<AgentProfil> => {
   const { data } = await apiClient.get<AgentProfil>("/auth/me");
   return data;
 };
+
+// --- Fonctions d'administration ---
+export const apiGetAdminStats = async (): Promise<AdminStats> => {
+  const { data } = await apiClient.get<AdminStats>("/admin/stats");
+  return data;
+};
+
+export const apiGetAdminAgents = async (filters?: { statut?: string; role?: string; search?: string }): Promise<AdminAgentItem[]> => {
+  const { data } = await apiClient.get<AdminAgentItem[]>("/admin/agents", { params: filters });
+  return data;
+};
+
+export const apiGetAdminAgent = async (id: string): Promise<AdminAgentItem> => {
+  const { data } = await apiClient.get<AdminAgentItem>(`/admin/agents/${id}`);
+  return data;
+};
+
+export const apiCreateAgent = async (payload: AgentCreatePayload): Promise<AgentCreateResult> => {
+  const { data } = await apiClient.post<AgentCreateResult>("/admin/agents", payload);
+  return data;
+};
+
+export const apiUpdateAgentRole = async (id: string, role: string): Promise<AdminAgentItem> => {
+  const { data } = await apiClient.patch<AdminAgentItem>(`/admin/agents/${id}`, { role });
+  return data;
+};
+
+export const apiRevokeAgent = async (id: string): Promise<{ id: string; message: string; statut: string }> => {
+  const { data } = await apiClient.post<{ id: string; message: string; statut: string }>(`/admin/agents/${id}/revoquer`);
+  return data;
+};
+
+export const apiGetAuditEntries = async (params?: { limit?: number; action?: string }): Promise<AuditEntryItem[]> => {
+  const { data } = await apiClient.get<AuditEntryItem[]>("/admin/audit", { params });
+  return data;
+};
+
+export const apiVerifyAuditChain = async (): Promise<AuditVerifyResult> => {
+  const { data } = await apiClient.get<AuditVerifyResult>("/admin/audit/verifier");
+  return data;
+};
+
+export const apiDownloadAuditCsv = async (): Promise<Blob> => {
+  const response = await apiClient.get("/admin/audit/export", { responseType: "blob" });
+  return response.data;
+};
+

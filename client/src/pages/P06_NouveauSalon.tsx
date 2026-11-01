@@ -114,3 +114,4 @@ export const P06_NouveauSalon: React.FC<NouveauSalonProps> = ({ onFermer }) => {
     </div>
   );
 };
+

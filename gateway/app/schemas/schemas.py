@@ -60,7 +60,7 @@ class MeResponse(BaseModel):
 
 
 # -----------------------------------------------------------------------------
-# Administration minimale (Back-office)
+# Administration (Back-office)
 # -----------------------------------------------------------------------------
 class AgentCreateRequest(BaseModel):
     nom: str = Field(..., min_length=2, max_length=255, description="Nom et prénom de l'agent")
@@ -82,3 +82,45 @@ class AgentRevokeResponse(BaseModel):
     id: str
     message: str
     statut: str
+
+
+class AdminStatsResponse(BaseModel):
+    total_agents: int
+    actifs: int
+    en_attente: int
+    revoques: int
+    par_role: dict[str, int]
+
+
+class AgentListItem(BaseModel):
+    id: str
+    nom: str
+    email: str
+    role: str
+    statut: str
+    matrix_user_id: str
+    date_creation: str
+    date_revocation: Optional[str] = None
+
+
+class AgentUpdateRequest(BaseModel):
+    role: Optional[str] = Field(None, description="Nouveau rôle : admin, agent, invite, rssi")
+    nom: Optional[str] = Field(None, min_length=2, max_length=255)
+
+
+class AuditEntryResponse(BaseModel):
+    id: str
+    horodatage: str
+    acteur: str
+    action: str
+    cible: str
+    detail: str
+    hash_precedent: str
+    hash: str
+
+
+class AuditVerifyResponse(BaseModel):
+    valide: bool
+    total_entrees: int
+    message: Optional[str] = None
+

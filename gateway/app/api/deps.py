@@ -81,3 +81,16 @@ def require_admin(agent: Agent = Depends(get_current_agent)) -> Agent:
             detail="Action réservée aux administrateurs."
         )
     return agent
+
+
+def require_admin_or_rssi(agent: Agent = Depends(get_current_agent)) -> Agent:
+    """
+    Restreint l'accès aux agents disposant du rôle 'admin' ou 'rssi'.
+    """
+    if agent.role not in ("admin", "rssi"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Action réservée aux administrateurs ou RSSI."
+        )
+    return agent
+
