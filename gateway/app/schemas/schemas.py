@@ -4,7 +4,7 @@ SovereignMsg Gateway - Schémas Pydantic v2
 Validation stricte des requêtes et sérialisation des réponses de l'API.
 """
 
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 EMAIL_PATTERN = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
@@ -82,6 +82,10 @@ class AgentRevokeResponse(BaseModel):
     id: str
     message: str
     statut: str
+    synapse_ok: bool = Field(
+        ...,
+        description="True si la désactivation Synapse a réussi, False si révocation incomplète."
+    )
 
 
 class AdminStatsResponse(BaseModel):
@@ -124,3 +128,35 @@ class AuditVerifyResponse(BaseModel):
     total_entrees: int
     message: Optional[str] = None
 
+
+# -----------------------------------------------------------------------------
+# Groupes (P07) - Salons multi-membres chiffrés
+# -----------------------------------------------------------------------------
+class GroupeCreateRequest(BaseModel):
+    nom: str = Field(..., min_length=2, max_length=100, description="Nom neutre du salon de groupe")
+    membres_emails: List[str] = Field(
+        ...,
+        min_length=1,
+        description="Liste des adresses e-mail des agents à inviter (actifs et enrôlés uniquement)"
+    )
+
+
+class GroupeMemberItem(BaseModel):
+    email: str
+    matrix_user_id: str
+    statut: str
+
+
+class GroupeCreateResponse(BaseModel):
+    room_id: str = Field(..., description="Identifiant Matrix du salon chiffré créé")
+    nom: str
+    membres_invites: List[GroupeMemberItem]
+    membres_refus: List[GroupeMemberItem] = Field(
+        default_factory=list,
+        description="Agents refusés car inconnus, non activés ou révoqués"
+    )
+    chiffrement_actif: bool = Field(
+        ...,
+        description="True si m.room.encryption a été configuré dans l'état initial du salon"
+    )
+    message: str

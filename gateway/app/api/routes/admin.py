@@ -38,7 +38,10 @@ from app.schemas.schemas import (
     AgentRevokeResponse,
     AgentUpdateRequest,
     AuditEntryResponse,
-    AuditVerifyResponse
+    AuditVerifyResponse,
+    GroupeCreateRequest,
+    GroupeCreateResponse,
+    GroupeMemberItem,
 )
 from app.api.deps import require_admin, require_admin_or_rssi
 
@@ -317,27 +320,74 @@ def revoke_agent(
             detail="Agent introuvable."
         )
 
-    now = datetime.now(timezone.utc)
-    agent.statut = "revoque"
-    agent.date_revocation = now
+    # Idempotence : si déjà révoqué, vérifie quand même que Synapse est synchrone
+    already_revoked = agent.statut == "revoque"
 
-    # Désactivation immédiate dans Synapse Matrix
-    synapse_client.deactivate_user(agent.matrix_user_id)
+    now = datetime.now(timezone.utc)
+
+    # Étape 1 : désactivation Synapse (retire l'utilisateur de tous ses salons,
+    # supprime tokens/clés, déclenche rotation Megolm dans les salons E2EE).
+    # Comportement confirmé pour Synapse v1.118.0 :
+    # POST /_synapse/admin/v1/deactivate/{user_id} retire automatiquement
+    # l'utilisateur de tous ses salons via des événements leave.
+    # Ref: https://element-hq.github.io/synapse/latest/admin_api/user_admin_api.html#deactivate-account
+    synapse_result = synapse_client.deactivate_user(agent.matrix_user_id)
+
+    if synapse_result.success:
+        # Succès complet : statut 'revoque'
+        agent.statut = "revoque"
+        agent.date_revocation = agent.date_revocation or now
+        audit_action = "AGENT_REVOCATION"
+        audit_detail = (
+            f"Révocation complète de {agent.nom}. "
+            f"Synapse : {synapse_result.message}"
+        )
+        statut_retour = "revoque"
+        message_retour = f"L'agent {agent.nom} a été révoqué avec succès."
+        synapse_ok = True
+    else:
+        # Synapse a échoué : on passe en 'revocation_incomplete'.
+        # Le login est déjà bloqué (statut != 'actif').
+        # L'opération est réessayable : renvoyer la même requête POST réessaiera.
+        agent.statut = "revocation_incomplete"
+        agent.date_revocation = agent.date_revocation or now
+        audit_action = "AGENT_REVOCATION_INCOMPLETE"
+        audit_detail = (
+            f"Révocation INCOMPLÈTE de {agent.nom}. "
+            f"Erreur Synapse : {synapse_result.message}. "
+            f"Login refusé. Opération réessayable."
+        )
+        statut_retour = "revocation_incomplete"
+        message_retour = (
+            f"Révocation incomplète : le compte gateway de {agent.nom} est bloqué "
+            f"mais la désactivation Synapse a échoué ({synapse_result.message}). "
+            f"Réessayez cette opération."
+        )
+        synapse_ok = False
 
     record_audit(
         db,
         acteur=admin.email,
-        action="AGENT_REVOCATION",
+        action=audit_action,
         cible=str(agent.id),
-        detail=f"Révocation du compte de {agent.nom}"
+        detail=audit_detail + (" [idempotent]" if already_revoked else "")
     )
 
     db.commit()
 
+    # Si Synapse a échoué, on retourne une erreur 502 pour signaler l'état partiel.
+    # La passerelle NE répond PAS "succès" en cas d'échec Synapse.
+    if not synapse_ok:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=message_retour
+        )
+
     return AgentRevokeResponse(
         id=str(agent.id),
-        message=f"L'agent {agent.nom} a été révoqué avec succès.",
-        statut="revoque"
+        message=message_retour,
+        statut=statut_retour,
+        synapse_ok=synapse_ok
     )
 
 
@@ -453,4 +503,97 @@ def export_audit_csv(
             "Content-Disposition": f"attachment; filename=\"{filename}\"",
             "Cache-Control": "no-cache, no-store, must-revalidate"
         }
+    )
+
+
+
+# -----------------------------------------------------------------------------
+# P07 - Gestion des groupes : salons chiffrés multi-membres
+# -----------------------------------------------------------------------------
+@router.post(
+    "/groupes",
+    response_model=GroupeCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Création d'un salon de groupe chiffré (P07)"
+)
+def create_groupe(
+    req: GroupeCreateRequest,
+    admin: Agent = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Crée un salon de groupe Matrix chiffré avec m.room.encryption dans l'état initial.
+
+    Règles de sécurité :
+    - Seuls les agents avec statut 'actif' peuvent être invités.
+    - Un agent inconnu, non activé (en_attente) ou révoqué est refusé et listés dans
+      'membres_refus' ; la création du salon réussit quand même avec les membres valides.
+    - Le chiffrement Megolm (m.room.encryption) est activé dans l'état initial du salon,
+      non modifiable après coup (preset: private_chat + initial_state E2EE).
+
+    Note : le salon Matrix est créé via l'API admin Synapse. La rotation des clés
+    Megolm est gérée automatiquement par les clients Matrix (matrix-js-sdk).
+    """
+    membres_invites: List[GroupeMemberItem] = []
+    membres_refus: List[GroupeMemberItem] = []
+
+    # Résolution et validation des membres demandés
+    for email in req.membres_emails:
+        agent = db.query(Agent).filter(Agent.email == email.strip()).first()
+        if not agent:
+            membres_refus.append(GroupeMemberItem(
+                email=email,
+                matrix_user_id="",
+                statut="inconnu"
+            ))
+        elif agent.statut != "actif":
+            membres_refus.append(GroupeMemberItem(
+                email=agent.email,
+                matrix_user_id=agent.matrix_user_id,
+                statut=agent.statut
+            ))
+        else:
+            membres_invites.append(GroupeMemberItem(
+                email=agent.email,
+                matrix_user_id=agent.matrix_user_id,
+                statut=agent.statut
+            ))
+
+    # Création du salon via l'API admin Synapse en tant que l'admin créateur
+    synapse_room_id = synapse_client.create_encrypted_room(
+        creator_matrix_user_id=admin.matrix_user_id,
+        room_name=req.nom,
+        invite_user_ids=[m.matrix_user_id for m in membres_invites]
+    )
+
+    if not synapse_room_id:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Impossible de créer le salon dans Synapse. Réessayez."
+        )
+
+    record_audit(
+        db,
+        acteur=admin.email,
+        action="GROUPE_CREATION",
+        cible=synapse_room_id,
+        detail=(
+            f"Salon '{req.nom}' créé. "
+            f"Membres invités : {[m.email for m in membres_invites]}. "
+            f"Refusés : {[m.email for m in membres_refus]}."
+        )
+    )
+    db.commit()
+
+    return GroupeCreateResponse(
+        room_id=synapse_room_id,
+        nom=req.nom,
+        membres_invites=membres_invites,
+        membres_refus=membres_refus,
+        chiffrement_actif=True,
+        message=(
+            f"Salon '{req.nom}' créé avec chiffrement E2EE activé. "
+            f"{len(membres_invites)} membre(s) invité(s). "
+            + (f"{len(membres_refus)} membre(s) refusé(s) : {[m.email for m in membres_refus]}." if membres_refus else "")
+        )
     )

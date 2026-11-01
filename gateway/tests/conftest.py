@@ -46,6 +46,7 @@ from app.core.security import hash_password, encrypt_secret, generate_gateway_jw
 from app.core.synapse_client import synapse_client
 from app.models.models import Agent, ActivationToken
 from app.main import app
+from app.core.audit import record_audit
 
 # Moteur SQLite en mémoire avec StaticPool pour partager la mémoire entre les sessions
 engine_test = create_engine(
@@ -175,6 +176,15 @@ def admin_agent(db):
     db.add(admin)
     db.commit()
     db.refresh(admin)
+    # Crée une entrée d'audit initiale pour que test_admin_audit_and_verification ait du contenu
+    record_audit(
+        db,
+        acteur="system",
+        action="ADMIN_ACCOUNT_CREATED",
+        cible=str(admin.id),
+        detail=f"Compte administrateur de test initialisé : {admin.email}"
+    )
+    db.commit()
     return admin
 
 

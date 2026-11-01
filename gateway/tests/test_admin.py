@@ -53,15 +53,24 @@ def test_admin_create_agent_forbidden_for_regular_agent(client, agent_headers):
 
 def test_admin_revoke_agent_immediate_session_termination(client, admin_headers, active_agent, agent_headers, db):
     """Vérifie que la révocation d'un agent invalide immédiatement sa session courante."""
+    from unittest.mock import patch
+    from app.core.synapse_client import DeactivateResult
+
     res_before = client.get("/api/auth/me", headers=agent_headers)
     assert res_before.status_code == 200
 
-    res_revoke = client.post(
-        f"/api/admin/agents/{active_agent.id}/revoquer",
-        headers=admin_headers
-    )
+    with patch("app.api.routes.admin.synapse_client.deactivate_user") as mock_deactivate:
+        mock_deactivate.return_value = DeactivateResult(
+            success=True, status_code=200, message="Compte désactivé."
+        )
+        res_revoke = client.post(
+            f"/api/admin/agents/{active_agent.id}/revoquer",
+            headers=admin_headers
+        )
+
     assert res_revoke.status_code == 200
     assert res_revoke.json()["statut"] == "revoque"
+    assert res_revoke.json()["synapse_ok"] is True
 
     res_after = client.get("/api/auth/me", headers=agent_headers)
     assert res_after.status_code == 401
