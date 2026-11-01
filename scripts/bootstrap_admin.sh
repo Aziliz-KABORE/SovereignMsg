@@ -24,7 +24,18 @@ fi
 ADMIN_USER="${SYNAPSE_ADMIN_USERNAME:-sovereign_gateway_admin}"
 ADMIN_PASS="${SYNAPSE_ADMIN_PASSWORD:-AdminDemoMatrix2026!}"
 REG_SECRET="${SYNAPSE_REGISTRATION_SHARED_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}"
+ADMIN_PASS="${SYNAPSE_ADMIN_PASSWORD}"
+REG_SECRET="${SYNAPSE_REGISTRATION_SHARED_SECRET}"
 SERVER_NAME="${SYNAPSE_SERVER_NAME:-sovereign.local}"
+
+if [[ -z "${REG_SECRET}" || "${REG_SECRET}" == *"CHANGEME"* ]]; then
+    echo "❌ Erreur : SYNAPSE_REGISTRATION_SHARED_SECRET n'est pas configuré dans .env."
+    exit 1
+fi
+if [[ -z "${ADMIN_PASS}" || "${ADMIN_PASS}" == *"CHANGEME"* ]]; then
+    echo "❌ Erreur : SYNAPSE_ADMIN_PASSWORD n'est pas configuré dans .env."
+    exit 1
+fi
 
 echo "🚀 [SovereignMsg] Démarrage du bootstrap de l'administrateur Synapse..."
 

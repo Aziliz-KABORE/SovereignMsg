@@ -15,10 +15,8 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = Field(default="production")
     DOMAIN_NAME: str = Field(default="sovereign.local")
 
-    # Base de données
-    DATABASE_URL: str = Field(
-        default="postgresql+psycopg2://gateway_user:gateway_secure_pass_demo_2026@postgres-gateway:5432/gateway_db"
-    )
+    # Base de données (OBLIGATOIRE, aucun fallback par défaut)
+    DATABASE_URL: str = Field(...)
 
     # Clé secrète JWT (au moins 32 octets = 64 caractères hex ou 32+ caractères bruts)
     JWT_SECRET: str = Field(...)
@@ -44,6 +42,13 @@ class Settings(BaseSettings):
         extra="ignore"
     )
 
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def validate_database_url(cls, v: str) -> str:
+        if not v or "CHANGEME" in v:
+            raise ValueError("DATABASE_URL est manquante ou contient une valeur CHANGEME non configurée.")
+        return v.strip()
+
     @field_validator("JWT_SECRET")
     @classmethod
     def validate_jwt_secret(cls, v: str) -> str:
@@ -58,15 +63,15 @@ class Settings(BaseSettings):
     @field_validator("FERNET_KEY")
     @classmethod
     def validate_fernet_key(cls, v: str) -> str:
-        if not v or len(v.strip()) < 40:
+        if not v or len(v.strip()) < 40 or "CHANGEME" in v:
             raise ValueError("FERNET_KEY invalide : doit être une clé Fernet valide de 32 octets en base64.")
         return v.strip()
 
     @field_validator("SYNAPSE_ADMIN_TOKEN")
     @classmethod
     def validate_synapse_admin_token(cls, v: str) -> str:
-        if not v or len(v.strip()) < 10:
-            raise ValueError("SYNAPSE_ADMIN_TOKEN ne peut pas être vide.")
+        if not v or len(v.strip()) < 10 or "CHANGEME" in v:
+            raise ValueError("SYNAPSE_ADMIN_TOKEN ne peut pas être vide ni contenir CHANGEME.")
         return v.strip()
 
     @field_validator("SYNAPSE_LOGIN_MODE")

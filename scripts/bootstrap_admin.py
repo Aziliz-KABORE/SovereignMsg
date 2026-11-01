@@ -8,6 +8,7 @@ Exécute les appels vers le conteneur Docker Synapse ou via HTTP interne.
 import json
 import os
 from pathlib import Path
+import secrets
 import subprocess
 import sys
 import time
@@ -33,6 +34,40 @@ def load_env() -> dict[str, str]:
     return env_vars
 
 
+def ensure_synapse_secrets() -> None:
+    """Génère dynamiquement les secrets Synapse dans homeserver.yaml si CHANGEME est présent."""
+    yaml_path = BASE_DIR / "deploy" / "synapse" / "homeserver.yaml"
+    if not yaml_path.exists():
+        return
+    with open(yaml_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    changed = False
+    if "CHANGEME_SYNAPSE_REGISTRATION_SHARED_SECRET" in content:
+        content = content.replace(
+            "CHANGEME_SYNAPSE_REGISTRATION_SHARED_SECRET_64HEX",
+            secrets.token_hex(32)
+        )
+        changed = True
+    if "CHANGEME_SYNAPSE_MACAROON_SECRET_MIN32CHARS" in content:
+        content = content.replace(
+            "CHANGEME_SYNAPSE_MACAROON_SECRET_MIN32CHARS",
+            secrets.token_hex(32)
+        )
+        changed = True
+    if "CHANGEME_SYNAPSE_FORM_SECRET_MIN32CHARS" in content:
+        content = content.replace(
+            "CHANGEME_SYNAPSE_FORM_SECRET_MIN32CHARS",
+            secrets.token_hex(32)
+        )
+        changed = True
+
+    if changed:
+        with open(yaml_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        print("[*] [SovereignMsg] Secrets Synapse generes automatiquement dans deploy/synapse/homeserver.yaml")
+
+
 def run_docker_command(cmd: list[str]) -> tuple[int, str]:
     """Exécute une commande docker compose et renvoie le code et la sortie."""
     try:
@@ -51,9 +86,13 @@ def run_docker_command(cmd: list[str]) -> tuple[int, str]:
 
 def main() -> None:
     """Procédure principale d'amorçage de l'administrateur Synapse."""
+    ensure_synapse_secrets()
     env = load_env()
     admin_user = env.get("SYNAPSE_ADMIN_USERNAME", "sovereign_gateway_admin")
-    admin_pass = env.get("SYNAPSE_ADMIN_PASSWORD", "AdminDemoMatrix2026!")
+    admin_pass = env.get("SYNAPSE_ADMIN_PASSWORD")
+    if not admin_pass or "CHANGEME" in admin_pass:
+        print("[!] [ERREUR SÉCURITÉ] SYNAPSE_ADMIN_PASSWORD n'est pas défini ou contient CHANGEME dans .env.", file=sys.stderr)
+        sys.exit(1)
     server_name = env.get("SYNAPSE_SERVER_NAME", "sovereign.local")
 
     print("[*] [SovereignMsg] Demarrage du bootstrap de l'administrateur Synapse...")
