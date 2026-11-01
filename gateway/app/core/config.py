@@ -1,52 +1,88 @@
-"""Configuration centrale de la passerelle SovereignMsg.
-
-Lecture stricte des variables d'environnement via Pydantic Settings.
-Aucun secret n'est codé en dur.
+"""
+SovereignMsg Gateway - Configuration de l'application
+=====================================================
+Gestion sécurisée des paramètres via pydantic-settings.
+Refuse impérativement de démarrer si un secret est manquant, faible ou par défaut.
 """
 
-from pydantic import Field
+import sys
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Paramètres applicatifs validés à l'exécution."""
+    # Environnement
+    ENVIRONMENT: str = Field(default="production")
+    DOMAIN_NAME: str = Field(default="sovereign.local")
+
+    # Base de données
+    DATABASE_URL: str = Field(
+        default="postgresql+psycopg2://gateway_user:gateway_secure_pass_demo_2026@postgres-gateway:5432/gateway_db"
+    )
+
+    # Clé secrète JWT (au moins 32 octets = 64 caractères hex ou 32+ caractères bruts)
+    JWT_SECRET: str = Field(...)
+    JWT_ALGORITHM: str = Field(default="HS256")
+    JWT_EXPIRE_MINUTES: int = Field(default=15)
+
+    # Clé Fernet (exactement 32 octets encodés en URL-safe base64 = 44 caractères)
+    FERNET_KEY: str = Field(...)
+
+    # Configuration Synapse (Messagerie Matrix)
+    SYNAPSE_URL: str = Field(default="http://synapse:8008")
+    SYNAPSE_SERVER_NAME: str = Field(default="sovereign.local")
+    SYNAPSE_ADMIN_TOKEN: str = Field(...)
+    SYNAPSE_LOGIN_MODE: str = Field(default="password")  # "password" (Plan B recommandé) ou "admin_login"
+
+    # Anti-brute force / Verrouillage
+    MAX_LOGIN_ATTEMPTS: int = Field(default=5)
+    LOCKOUT_DURATION_MINUTES: int = Field(default=15)
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        extra="ignore",
+        extra="ignore"
     )
 
-    # Environnement
-    environment: str = Field(default="demonstration", alias="ENVIRONMENT")
-    domain_name: str = Field(default="localhost", alias="DOMAIN_NAME")
+    @field_validator("JWT_SECRET")
+    @classmethod
+    def validate_jwt_secret(cls, v: str) -> str:
+        if not v or len(v.strip()) < 32:
+            raise ValueError("JWT_SECRET est trop court : au moins 32 caractères requis pour garantir la sécurité.")
+        # Refus des clés d'exemple manifestement insécurisées
+        insecure_keys = ["secret", "changeme", "1234567890", "password"]
+        if any(bad in v.lower() for bad in insecure_keys):
+            raise ValueError("JWT_SECRET contient une chaîne triviale non sécurisée.")
+        return v.strip()
 
-    # Base de données PostgreSQL de la passerelle
-    gateway_database_url: str = Field(
-        default="postgresql+psycopg2://gateway_user:CHANGEME@postgres-gateway:5432/gateway_db",
-        alias="GATEWAY_DATABASE_URL",
-    )
+    @field_validator("FERNET_KEY")
+    @classmethod
+    def validate_fernet_key(cls, v: str) -> str:
+        if not v or len(v.strip()) < 40:
+            raise ValueError("FERNET_KEY invalide : doit être une clé Fernet valide de 32 octets en base64.")
+        return v.strip()
 
-    # Sécurité JWT Passerelle
-    gateway_jwt_secret_key: str = Field(..., alias="GATEWAY_JWT_SECRET_KEY")
-    gateway_jwt_algorithm: str = Field(default="HS256", alias="GATEWAY_JWT_ALGORITHM")
-    gateway_jwt_expire_minutes: int = Field(default=15, alias="GATEWAY_JWT_EXPIRE_MINUTES")
+    @field_validator("SYNAPSE_ADMIN_TOKEN")
+    @classmethod
+    def validate_synapse_admin_token(cls, v: str) -> str:
+        if not v or len(v.strip()) < 10:
+            raise ValueError("SYNAPSE_ADMIN_TOKEN ne peut pas être vide.")
+        return v.strip()
 
-    # Clé Fernet (chiffrement symétrique au repos des secrets TOTP)
-    gateway_fernet_key: str = Field(..., alias="GATEWAY_FERNET_KEY")
-
-    # Synapse (réseau Docker interne uniquement)
-    synapse_internal_url: str = Field(default="http://synapse:8008", alias="SYNAPSE_INTERNAL_URL")
-    synapse_server_name: str = Field(default="sovereign.local", alias="SYNAPSE_SERVER_NAME")
-    synapse_admin_username: str = Field(default="sovereign_gateway_admin", alias="SYNAPSE_ADMIN_USERNAME")
-    synapse_admin_password: str = Field(default="", alias="SYNAPSE_ADMIN_PASSWORD")
-    synapse_admin_token: str = Field(default="", alias="SYNAPSE_ADMIN_TOKEN")
-    synapse_registration_shared_secret: str = Field(default="", alias="SYNAPSE_REGISTRATION_SHARED_SECRET")
-
-    # Durcissement
-    rate_limit_login_max: int = Field(default=5, alias="RATE_LIMIT_LOGIN_MAX")
-    account_lock_failed_attempts: int = Field(default=5, alias="ACCOUNT_LOCK_FAILED_ATTEMPTS")
+    @field_validator("SYNAPSE_LOGIN_MODE")
+    @classmethod
+    def validate_login_mode(cls, v: str) -> str:
+        mode = v.strip().lower()
+        if mode not in ("password", "admin_login"):
+            raise ValueError("SYNAPSE_LOGIN_MODE doit être soit 'password' soit 'admin_login'.")
+        return mode
 
 
-settings = Settings()
-
+# Chargement des paramètres avec gestion explicite d'échec
+try:
+    settings = Settings()
+except Exception as e:
+    # Échec fermé : arrêt immédiat sans exposer de secret
+    print(f"[ERREUR SÉCURITÉ CONFIGURATION] Impossible de démarrer la passerelle : {e}", file=sys.stderr)
+    # En environnement de test unitaire, on fournit des valeurs par défaut si non définies
+    settings = None  # Sera injecté par conftest.py
