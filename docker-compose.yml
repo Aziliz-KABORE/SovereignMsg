@@ -1,0 +1,166 @@
+# ==============================================================================
+# SovereignMsg - Orchestration Docker Compose
+# ==============================================================================
+# RÈGLES DE SÉCURITÉ NON NÉGOCIABLES :
+# 1. Seul le port 443 est publié vers l'extérieur (Nginx TLS).
+# 2. Aucun port de base de données ni port Matrix interne (8008) n'est exposé sur l'hôte.
+# 3. Deux instances PostgreSQL isolées :
+#    - postgres-synapse : encodage UTF-8 et collation C obligatoires pour Synapse
+#    - postgres-gateway : base de données dédiée pour la passerelle d'identité
+# 4. Images avec versions rigoureusement figées.
+# 5. Redémarrage automatique activé (restart: unless-stopped).
+# ==============================================================================
+
+name: sovereignmsg
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Base de données PostgreSQL pour Synapse (Instance 1)
+  # ----------------------------------------------------------------------------
+  postgres-synapse:
+    image: postgres:16-alpine
+    container_name: sovereign-postgres-synapse
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_SYNAPSE_DB:-synapse}
+      POSTGRES_USER: ${POSTGRES_SYNAPSE_USER:-synapse_user}
+      POSTGRES_PASSWORD: ${POSTGRES_SYNAPSE_PASSWORD:-synapse_secure_pass_demo_2026}
+      # Recommandation formelle Synapse : encodage UTF-8 et collation C
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_synapse_data:/var/lib/postgresql/data
+    networks:
+      - sovereign_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ----------------------------------------------------------------------------
+  # 2. Base de données PostgreSQL pour la Passerelle d'Identité (Instance 2)
+  # ----------------------------------------------------------------------------
+  postgres-gateway:
+    image: postgres:16-alpine
+    container_name: sovereign-postgres-gateway
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_GATEWAY_DB:-gateway_db}
+      POSTGRES_USER: ${POSTGRES_GATEWAY_USER:-gateway_user}
+      POSTGRES_PASSWORD: ${POSTGRES_GATEWAY_PASSWORD:-gateway_secure_pass_demo_2026}
+    volumes:
+      - postgres_gateway_data:/var/lib/postgresql/data
+    networks:
+      - sovereign_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ----------------------------------------------------------------------------
+  # 3. Serveur Matrix Synapse (Messagerie Souveraine)
+  # ----------------------------------------------------------------------------
+  synapse:
+    image: matrixdotorg/synapse:v1.118.0
+    container_name: sovereign-synapse
+    restart: unless-stopped
+    depends_on:
+      postgres-synapse:
+        condition: service_healthy
+    environment:
+      SYNAPSE_CONFIG_PATH: /etc/synapse/homeserver.yaml
+      SYNAPSE_SERVER_NAME: ${SYNAPSE_SERVER_NAME:-sovereign.local}
+      SYNAPSE_REPORT_STATS: ${SYNAPSE_REPORT_STATS:-no}
+    volumes:
+      - ./deploy/synapse/homeserver.yaml:/etc/synapse/homeserver.yaml:ro
+      - ./deploy/synapse/sovereign.local.log.config:/data/sovereign.local.log.config:ro
+      - synapse_data:/data
+    networks:
+      - sovereign_internal
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8008/_matrix/client/versions || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  # ----------------------------------------------------------------------------
+  # 4. Passerelle d'Identité FastAPI (gateway)
+  # ----------------------------------------------------------------------------
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: sovereign-gateway
+    restart: unless-stopped
+    depends_on:
+      postgres-gateway:
+        condition: service_healthy
+      synapse:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-demonstration}
+      DOMAIN_NAME: ${DOMAIN_NAME:-localhost}
+      POSTGRES_GATEWAY_HOST: postgres-gateway
+      POSTGRES_GATEWAY_PORT: 5432
+      GATEWAY_DATABASE_URL: postgresql+psycopg2://${POSTGRES_GATEWAY_USER:-gateway_user}:${POSTGRES_GATEWAY_PASSWORD:-gateway_secure_pass_demo_2026}@postgres-gateway:5432/${POSTGRES_GATEWAY_DB:-gateway_db}
+      GATEWAY_JWT_SECRET_KEY: ${GATEWAY_JWT_SECRET_KEY:-f8a29b43e8d71029c9b4e8201a34f59871029384756102938475610293847561}
+      GATEWAY_JWT_ALGORITHM: ${GATEWAY_JWT_ALGORITHM:-HS256}
+      GATEWAY_JWT_EXPIRE_MINUTES: ${GATEWAY_JWT_EXPIRE_MINUTES:-15}
+      GATEWAY_FERNET_KEY: ${GATEWAY_FERNET_KEY:-tQ1K2Vv5P9wL8R0mJ3yA4n6X7zC1bE2dF3gH4jK5mN8=}
+      SYNAPSE_INTERNAL_URL: http://synapse:8008
+      SYNAPSE_SERVER_NAME: ${SYNAPSE_SERVER_NAME:-sovereign.local}
+      SYNAPSE_ADMIN_USERNAME: ${SYNAPSE_ADMIN_USERNAME:-sovereign_gateway_admin}
+      SYNAPSE_ADMIN_PASSWORD: ${SYNAPSE_ADMIN_PASSWORD:-AdminDemoMatrix2026!}
+      SYNAPSE_ADMIN_TOKEN: ${SYNAPSE_ADMIN_TOKEN:-}
+      SYNAPSE_REGISTRATION_SHARED_SECRET: ${SYNAPSE_REGISTRATION_SHARED_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+    networks:
+      - sovereign_internal
+
+  # ----------------------------------------------------------------------------
+  # 5. Reverse Proxy Nginx (Point d'Entrée Unique TLS 443 + Distribution PWA)
+  # ----------------------------------------------------------------------------
+  nginx:
+    build:
+      context: .
+      dockerfile: deploy/nginx/Dockerfile
+    container_name: sovereign-nginx
+    restart: unless-stopped
+    ports:
+      # Règle non négociable : SEUL LE PORT 443 EST PUBLIÉ VERS L'EXTÉRIEUR
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      synapse:
+        condition: service_healthy
+      gateway:
+        condition: service_started
+    networks:
+      - sovereign_internal
+
+# ------------------------------------------------------------------------------
+# Réseau Docker interne isolé
+# ------------------------------------------------------------------------------
+networks:
+  sovereign_internal:
+    name: sovereign_internal_network
+    driver: bridge
+
+# ------------------------------------------------------------------------------
+# Volumes persistants
+# ------------------------------------------------------------------------------
+volumes:
+  postgres_synapse_data:
+    name: sovereign_postgres_synapse_data
+  postgres_gateway_data:
+    name: sovereign_postgres_gateway_data
+  synapse_data:
+    name: sovereign_synapse_data

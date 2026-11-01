@@ -1,0 +1,77 @@
+# ==============================================================================
+# SovereignMsg - Configuration Matrix Synapse (deploy/synapse/homeserver.yaml)
+# ==============================================================================
+# RÈGLES DE SÉCURITÉ APPLIQUÉES :
+# 1. Inscription publique désactivée (enable_registration: false)
+# 2. Fédération désactivée (federation_domain_whitelist: [], port 8448 non exposé)
+# 3. Présence désactivée (use_presence: false)
+# 4. SANS jwt_config (l'authentification agent est gérée par la passerelle FastAPI)
+# 5. password_config laissé activé uniquement pour la connexion interne de la passerelle
+#    (inaccessible depuis l'extérieur via les règles strictes Nginx)
+# 6. Base de données PostgreSQL dédiée avec encodage UTF-8 et collation C
+# ==============================================================================
+
+server_name: "sovereign.local"
+pid_file: /data/homeserver.pid
+
+# Écoute interne HTTP uniquement sur le port 8008 (non publié sur l'hôte)
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    bind_addresses: ['0.0.0.0']
+    resources:
+      - names: [client, federation]
+        compress: false
+
+# Base de données PostgreSQL dédiée à Synapse
+database:
+  name: psycopg2
+  args:
+    user: synapse_user
+    password: "CHANGEME_SYNAPSE_DB_PASSWORD_MIN32CHARS"
+    database: synapse
+    host: postgres-synapse
+    port: 5432
+    cp_min: 5
+    cp_max: 10
+
+# Fichiers de journalisation et chemins internes
+log_config: "/data/sovereign.local.log.config"
+media_store_path: "/data/media_store"
+signing_key_path: "/data/sovereign.local.signing.key"
+
+# Inscription publique DÉSACTIVÉE
+enable_registration: false
+# Secret partagé pour l'enregistrement d'administration interne via scripts/bootstrap_admin
+registration_shared_secret: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+# Fédération STRICTEMENT DÉSACTIVÉE (isolation réseau de l'administration)
+federation_domain_whitelist: []
+trusted_key_servers: []
+suppress_key_server_warning: true
+
+# Présence DÉSACTIVÉE (gain de performances et pas d'exposition d'activité)
+use_presence: false
+
+# Connexion par mot de passe ACTIVE dans Synapse mais inaccessible depuis l'extérieur
+# (nécessaire à l'obtention du jeton de l'administrateur passerelle et au plan B)
+password_config:
+  enabled: true
+
+# Secrets cryptographiques internes pour sessions et formulaires
+macaroon_secret_key: "CHANGEME_SYNAPSE_MACAROON_SECRET_MIN32CHARS"
+form_secret: "CHANGEME_SYNAPSE_FORM_SECRET_MIN32CHARS"
+
+# Données télémétriques désactivées
+report_stats: false
+enable_metrics: false
+
+# Limitation des médias côté serveur
+max_upload_size: 50M
+url_preview_enabled: false
+
+# Clé de chiffrement au repos des exports si applicable
+rc_messages_per_second: 50
+rc_burst_count: 100

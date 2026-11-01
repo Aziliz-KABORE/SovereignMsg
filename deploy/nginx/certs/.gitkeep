@@ -1,0 +1,3 @@
+# Ce dossier contiendra les certificats TLS (server.crt et server.key)
+# générés par scripts/generate_certs.sh ou fournis par l'administrateur.
+# Les certificats et clés réels sont exclus du versionnement Git.
