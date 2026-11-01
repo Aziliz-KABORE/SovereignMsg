@@ -61,7 +61,7 @@ Passerelle, Synapse --> PostgreSQL (deux bases)
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/Aziliz-KABORE/SovereignMsg.git
+git clone https://github.com/votre-organisation/SovereignMsg.git
 cd SovereignMsg
 ```
 
@@ -253,7 +253,14 @@ SovereignMsg/
 │   ├── test_protocole_b2.py   # Test E2E sur pile Docker
 │   └── generate_certs.py      # Certificats TLS de développement
 ├── docs/
-│   └── SECURITY.md            # Analyse de sécurité
+│   ├── NOTE_PRE_PROJET.md     # Note de pré-projet officielle (Hackathon 226)
+│   ├── NOTE_SECURITE.md       # Note de sécurité officielle (Hackathon 226)
+│   ├── SECURITY.md            # Dossier détaillé d'analyse de sécurité
+│   ├── ARCHITECTURE.md        # Architecture globale et flux réseau
+│   ├── DEPLOYMENT.md          # Guide de déploiement et d'amorçage
+│   ├── DEMO_SCRIPT.md         # Script de démonstration vidéo (3 min)
+│   ├── Note_de_pre-projet_SovereignMsg.pdf
+│   └── Note_de_securite_SovereignMsg.pdf
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
@@ -269,4 +276,4 @@ SovereignMsg/
 
 ## Équipe
 
-Équipe Hackathon 226 – DGTD / MTDPCE
+Équipe Kadem – Hackathon 226 – DGTD / MTDPCE

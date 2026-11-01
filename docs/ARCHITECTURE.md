@@ -60,3 +60,13 @@ Conformément aux préconisations d'architecture :
    - L'instance Gateway héberge les fiches agents, les métadonnées de sessions, les secrets TOTP chiffrés et la piste d'audit inviolable.
 2. **PostgreSQL Synapse** est initialisé avec `--encoding=UTF-8 --lc-collate=C --lc-ctype=C` comme exigé par Synapse pour garantir l'intégrité du tri et des index d'événements.
 
+
+
+---
+
+## 5. Documents de Référence Associés
+- [Note de Pré-projet (Hackathon 226)](NOTE_PRE_PROJET.md) : Vision, protocole Matrix, tableau comparatif des licences open source, répartition des rôles (Équipe Kadem).
+- [Note de Sécurité (Hackathon 226)](NOTE_SECURITE.md) : Matrice formelle des menaces, hypothèses de confiance et métadonnées visibles.
+- [Dossier d'Analyse de Sécurité Approfondi](SECURITY.md) : Modélisation des attaques, protocole B.2 et preuves de validation.
+- [Script de Démonstration Vidéo](DEMO_SCRIPT.md) : Déroulé chronométré en 3 minutes.
+- [Guide de Déploiement](DEPLOYMENT.md) : Amorçage et démarrage de la pile conteneurisée.

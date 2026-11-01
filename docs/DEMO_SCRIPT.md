@@ -102,3 +102,4 @@ Ce document détaille le déroulé pas-à-pas pour enregistrer la vidéo de dém
    docker exec -w /app -e PYTHONPATH=/app sovereign-gateway python scripts/seed_demo_agents.py
    ```
 3. **Résolution recommandée** : 1920×1080 (16:9), zoom navigateur à 100% ou 110% pour une lisibilité parfaite des badges et textes.
+
