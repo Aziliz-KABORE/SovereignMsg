@@ -108,7 +108,7 @@ def main() -> None:
             "docker", "compose", "exec", "-T", "gateway",
             "curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
             "-H", f"Authorization: Bearer {admin_token}",
-            "http://synapse:8008/_synapse/admin/v1/users"
+            "http://synapse:8008/_synapse/admin/v2/users"
         ]
         rc, out = run_cmd(cmd)
         status_code = out.strip()

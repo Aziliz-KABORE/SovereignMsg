@@ -12,11 +12,9 @@ dist
 .env
 .env.*
 !.env.example
-*.key
-*.crt
+# Les certificats TLS sont nécessaires au build Nginx - on les inclut via volume au runtime.
+# On exclut uniquement les fichiers de clés hors du dossier certs/ connu.
 *.pem
-deploy/nginx/certs/*
-!deploy/nginx/certs/.gitkeep
 deploy/synapse/data
 *.sqlite
 *.sqlite3
@@ -28,3 +26,4 @@ htmlcov
 .venv
 venv
 docs/
+

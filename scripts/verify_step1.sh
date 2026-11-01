@@ -137,7 +137,7 @@ if [[ -f "${TOKEN_FILE}" ]]; then
     INTERNAL_CALL_STATUS=$(docker compose -f "${ROOT_DIR}/docker-compose.yml" exec -T gateway \
         curl -s -o /dev/null -w "%{http_code}" \
         -H "Authorization: Bearer ${ADMIN_TOKEN}" \
-        http://synapse:8008/_synapse/admin/v1/users || echo "ERR")
+        http://synapse:8008/_synapse/admin/v2/users || echo "ERR")
 
     if [[ "${INTERNAL_CALL_STATUS}" == "200" ]]; then
         report_test "Appel Synapse Admin depuis le conteneur gateway" "PASS" "Code HTTP 200 (Succès interne)"

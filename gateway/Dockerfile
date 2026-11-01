@@ -11,11 +11,10 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Dépendances système minimales pour compilation C si nécessaire et curl pour healthcheck
+# curl uniquement pour le healthcheck Docker.
+# psycopg2-binary est pré-compilé : gcc et libpq-dev ne sont PAS nécessaires.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    gcc \
-    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Création d'un utilisateur non-root dédié pour le principe de moindre privilège
