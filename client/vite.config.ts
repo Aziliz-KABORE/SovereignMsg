@@ -2,18 +2,17 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import wasm from 'vite-plugin-wasm';
-import topLevelAwait from 'vite-plugin-top-level-await';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     wasm(),
-    topLevelAwait(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       workbox: {
+        maximumFileSizeToCacheInBytes: 20 * 1024 * 1024,
         // Mise en cache exclusive des assets statiques de l'application (HTML, JS, CSS, SVG)
         // AUCUN contenu d'API, aucun message Matrix, aucun secret n'est mis en cache !
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
@@ -49,6 +48,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3000
+  },
+  build: {
+    target: 'esnext'
   }
 });
 
