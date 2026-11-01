@@ -1,37 +1,58 @@
-import React from 'react';
+/**
+ * SovereignMsg Client - Application principale et routage
+ * ========================================================
+ * Routage React Router avec AuthProvider et garde de routes.
+ * Règles :
+ * - Aucune dépendance externe ni CDN.
+ * - Redirection stricte via <Navigate replace /> (aucun rendu vide).
+ */
+
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./store/authStore";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { P01_Login } from "./pages/P01_Login";
+import { P03_Activation } from "./pages/P03_Activation";
+import { P04_Accueil } from "./pages/P04_Accueil";
+import { AccesRefuse } from "./pages/AccesRefuse";
+import "./locales/i18n";
 
 export const App: React.FC = () => {
   return (
-    <div style={{ maxWidth: '640px', margin: '40px auto', padding: '24px', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-      <header style={{ textAlign: 'center', marginBottom: '24px' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-          <span style={{ display: 'inline-block', width: '20px', height: '10px', backgroundColor: '#EF3340', borderRadius: '2px' }}></span>
-          <span style={{ display: 'inline-block', width: '20px', height: '10px', backgroundColor: '#009739', borderRadius: '2px' }}></span>
-        </div>
-        <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#004D25' }}>SovereignMsg</h1>
-        <p style={{ color: '#64748B', fontSize: '14px', marginTop: '4px' }}>
-          Messagerie Souveraine Sécurisée — Administration Burkinabè (Hackathon 226)
-        </p>
-      </header>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Routes publiques d'authentification */}
+          <Route path="/connexion" element={<P01_Login />} />
+          <Route path="/activation" element={<P03_Activation />} />
+          <Route path="/acces-refuse" element={<AccesRefuse />} />
 
-      <section style={{ backgroundColor: '#F1F5F9', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#0F172A', marginBottom: '8px' }}>
-          Statut de l'Infrastructure (Étape 1)
-        </h2>
-        <ul style={{ listStyleType: 'none', paddingLeft: 0, fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <li>🔒 <strong>Chiffrement de bout en bout :</strong> vodozemac / Rust Crypto (Client Only)</li>
-          <li>🛡️ <strong>Reverse Proxy Nginx :</strong> Seul le port 443 est exposé avec TLS durci</li>
-          <li>🚫 <strong>Synapse :</strong> Inscription publique et fédération désactivées</li>
-          <li>🔑 <strong>Passerelle FastAPI :</strong> Authentification forte (Argon2id + TOTP Fernet)</li>
-        </ul>
-      </section>
+          {/* Espace sécurisé de l'agent (protégé par jeton en mémoire) */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <P04_Accueil />
+              </ProtectedRoute>
+            }
+          />
 
-      <footer style={{ textAlign: 'center', fontSize: '12px', color: '#94A3B8' }}>
-        République du Burkina Faso — Ministère de la Transition Digitale (MTDPCE / DGTD)
-      </footer>
-    </div>
+          {/* Exemple de route réservée aux administrateurs pour test de garde de rôle */}
+          <Route
+            path="/admin-test"
+            element={
+              <ProtectedRoute rolesAutorises={["admin"]}>
+                <div data-testid="admin-content">Espace Administrateur Sécurisé</div>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Redirection par défaut */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 
 export default App;
-

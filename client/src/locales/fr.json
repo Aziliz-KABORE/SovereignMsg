@@ -1,0 +1,54 @@
+{
+  "app": {
+    "title": "SovereignMsg",
+    "subtitle": "Messagerie Instantanée Souveraine",
+    "republic": "Burkina Faso - Administration Publique"
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion sécurisée",
+      "email_label": "Adresse e-mail professionnelle",
+      "email_placeholder": "prenom.nom@ministere.bf",
+      "password_label": "Mot de passe",
+      "password_placeholder": "••••••••••••",
+      "totp_label": "Code d'authentification (TOTP)",
+      "totp_placeholder": "123456",
+      "totp_help": "Saisissez le code à 6 chiffres généré par votre application d'authentification.",
+      "submit": "Se connecter",
+      "submitting": "Authentification en cours...",
+      "error_generic": "Identifiants invalides. Si vous venez d'utiliser un code, attendez le suivant (30 s) avant de réessayer.",
+      "session_expired": "Session terminée ou révoquée. Veuillez vous reconnecter.",
+      "activation_link": "Première connexion ? Activer votre compte"
+    },
+    "activation": {
+      "title": "Activation de votre compte",
+      "step1_title": "Étape 1 : Création de votre mot de passe",
+      "token_label": "Jeton d'activation",
+      "token_placeholder": "Collez le jeton remis par votre administrateur",
+      "new_password_label": "Nouveau mot de passe (12 caractères min.)",
+      "new_password_placeholder": "••••••••••••",
+      "confirm_password_label": "Confirmez le mot de passe",
+      "confirm_password_placeholder": "••••••••••••",
+      "password_mismatch": "Les mots de passe ne correspondent pas.",
+      "password_too_short": "Le mot de passe doit comporter au moins 12 caractères.",
+      "submit_step1": "Valider le mot de passe",
+      "submitting_step1": "Génération de la clé TOTP...",
+      "step2_title": "Étape 2 : Configuration du double facteur (TOTP)",
+      "qr_instruction": "Scannez ce code QR avec votre application d'authentification (ex: FreeOTP, Aegis, Google Authenticator) :",
+      "manual_entry": "Ou saisissez manuellement ce secret dans votre application :",
+      "confirm_code_label": "Code TOTP affiché par l'application",
+      "confirm_code_placeholder": "123456",
+      "submit_step2": "Confirmer et activer le compte",
+      "submitting_step2": "Vérification et activation...",
+      "success_message": "Compte activé avec succès ! Vous pouvez désormais vous connecter.",
+      "back_to_login": "Retour à la page de connexion",
+      "error_generic": "Jeton d'activation invalide ou expiré."
+    },
+    "logout": "Déconnexion"
+  },
+  "errors": {
+    "access_denied_title": "Accès refusé",
+    "access_denied_message": "Vous ne disposez pas des privilèges nécessaires pour accéder à cette section.",
+    "return_home": "Retour à l'accueil"
+  }
+}
