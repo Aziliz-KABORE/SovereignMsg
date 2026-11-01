@@ -73,3 +73,4 @@ Validez automatiquement que l'ensemble des critères d'acceptation de l'Étape 1
 - **Passerelle d'Identité (Health) :** `https://localhost/api/health`
 - **Documentation API (Swagger) :** `https://localhost/api/docs`
 - **Matrix Versions publiques :** `https://localhost/_matrix/client/versions`
+

@@ -42,6 +42,10 @@ log_config: "/data/sovereign.local.log.config"
 media_store_path: "/data/media_store"
 signing_key_path: "/data/sovereign.local.signing.key"
 
+# Chiffrement E2EE activé par défaut pour TOUS les salons (Cahier des charges Annexe B.1)
+# Règle éliminatoire : aucun message ne doit apparaître en clair en base
+encryption_enabled_by_default_for_room_type: all
+
 # Inscription publique DÉSACTIVÉE
 enable_registration: false
 # Secret partagé pour l'enregistrement d'administration interne via scripts/bootstrap_admin
@@ -75,3 +79,4 @@ url_preview_enabled: false
 # Clé de chiffrement au repos des exports si applicable
 rc_messages_per_second: 50
 rc_burst_count: 100
+

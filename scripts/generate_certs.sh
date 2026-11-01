@@ -53,3 +53,4 @@ echo "✅ Certificat TLS généré avec succès :"
 echo "   - Clé privée :  ${KEY_FILE}"
 echo "   - Certificat :  ${CRT_FILE}"
 echo "   - Noms (SAN) :  localhost, sovereign.local, 127.0.0.1"
+

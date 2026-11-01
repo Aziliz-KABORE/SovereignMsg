@@ -44,3 +44,4 @@ Seule la passerelle d'identité FastAPI, opérant sur le réseau Docker interne 
 - Aucun secret, certificat TLS ou fichier `.env` réel n'est versionné dans Git.
 - Un `.gitignore` exhaustif et un fichier modèle `.env.example` sont fournis.
 - Les logs ne consignent jamais de mots de passe, tokens, secrets TOTP ou données privées.
+

@@ -116,3 +116,4 @@ echo "🔄 Redémarrage du conteneur de la passerelle avec le nouveau jeton..."
 docker compose -f "${ROOT_DIR}/docker-compose.yml" restart gateway > /dev/null 2>&1 || true
 
 echo "🎉 Bootstrap de l'administrateur Synapse achevé avec succès !"
+

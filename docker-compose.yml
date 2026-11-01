@@ -164,3 +164,4 @@ volumes:
     name: sovereign_postgres_gateway_data
   synapse_data:
     name: sovereign_synapse_data
+

@@ -59,3 +59,4 @@ Conformément aux préconisations d'architecture :
    - L'instance Synapse héberge les événements signés et chiffrés Matrix.
    - L'instance Gateway héberge les fiches agents, les métadonnées de sessions, les secrets TOTP chiffrés et la piste d'audit inviolable.
 2. **PostgreSQL Synapse** est initialisé avec `--encoding=UTF-8 --lc-collate=C --lc-ctype=C` comme exigé par Synapse pour garantir l'intégrité du tri et des index d'événements.
+

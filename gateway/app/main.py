@@ -30,3 +30,4 @@ def health_check() -> dict[str, str]:
         "service": "sovereignmsg-gateway",
         "stage": "step1-infrastructure",
     }
+
