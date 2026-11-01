@@ -147,3 +147,4 @@ Au-delà du socle de sécurité obligatoire, **SovereignMsg** se distingue par d
 | **Membre 2** | **Application web (PWA), chiffrement, administration** | Client React installable, intégration du SDK Matrix / vodozemac, chiffrement E2EE, salons et groupes, interfaces d'accès et d'administration, README, vidéo de démonstration. |
 
 *Les deux membres relisent mutuellement chaque fonction d'authentification et de chiffrement ; une fiche d'explication par mécanisme est préparée pour l'entretien technique.*
+

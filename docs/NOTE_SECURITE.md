@@ -107,3 +107,4 @@
 ---
 
 **Conclusion :** Le serveur de messagerie ne lit jamais les messages ni les fichiers en clair. Toute tentative d'altération de l'audit est mathématiquement détectable. Aucune cryptographie non éprouvée n'a été développée par l'équipe.
+

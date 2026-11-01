@@ -159,15 +159,52 @@ export const P01_Login: React.FC = () => {
               type="text"
               name="codeTotp"
               required
-              inputMode="numeric"
-              maxLength={6}
-              pattern="[0-9]{6}"
+              maxLength={32}
               autoComplete="one-time-code"
               value={codeTotp}
-              onChange={(e) => setCodeTotp(e.target.value.replace(/\D/g, ""))}
-              placeholder={t("auth.login.totp_placeholder")}
-              helpText={t("auth.login.totp_help")}
+              onChange={(e) => setCodeTotp(e.target.value.trim())}
+              placeholder="Ex : 123456 ou JBSWY3DPEHPK3PXP"
+              helpText="Saisissez le code à 6 chiffres généré par votre application (Google Authenticator) ou directement le secret de test (JBSWY3DPEHPK3PXP)."
             />
+
+            <div className="p-3 bg-gray-50 rounded border border-gray-200 text-xs">
+              <span className="font-semibold text-gray-700 block mb-2">Comptes de test rapide (1-clic) :</span>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="px-2.5 py-1.5 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-100 text-gray-800 font-medium cursor-pointer"
+                  onClick={() => {
+                    setEmail("admin@gouv.bf");
+                    setMotDePasse("AdminDemo2026!#");
+                    setCodeTotp("JBSWY3DPEHPK3PXP");
+                  }}
+                >
+                  👑 Admin (admin@gouv.bf)
+                </button>
+                <button
+                  type="button"
+                  className="px-2.5 py-1.5 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-100 text-gray-800 font-medium cursor-pointer"
+                  onClick={() => {
+                    setEmail("agent.a@gouv.bf");
+                    setMotDePasse("AgentADemo2026!#");
+                    setCodeTotp("JBSWY3DPEHPK3PXP");
+                  }}
+                >
+                  🛡️ Agent A (agent.a@gouv.bf)
+                </button>
+                <button
+                  type="button"
+                  className="px-2.5 py-1.5 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-100 text-gray-800 font-medium cursor-pointer"
+                  onClick={() => {
+                    setEmail("agent.c@gouv.bf");
+                    setMotDePasse("AgentCDemo2026!#");
+                    setCodeTotp("JBSWY3DPEHPK3PXP");
+                  }}
+                >
+                  📋 Agent C (agent.c@gouv.bf)
+                </button>
+              </div>
+            </div>
 
             <div className="pt-2">
               <Button type="submit" isLoading={chargement}>
