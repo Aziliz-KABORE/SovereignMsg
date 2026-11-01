@@ -31,95 +31,45 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, titre }) => 
   ];
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#F8FAFC", display: "flex", flexDirection: "column" }}>
+    <div className="admin-layout">
       {/* Barre supérieure souveraine */}
-      <header
-        style={{
-          backgroundColor: "#004D25",
-          color: "#fff",
-          padding: "12px 24px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+      <header className="admin-header">
+        <div className="admin-brand-bar">
           {/* Drapeau du Burkina Faso */}
-          <div style={{ display: "flex", flexDirection: "column", width: "24px", height: "16px", borderRadius: "2px", overflow: "hidden" }}>
-            <div style={{ flex: 1, backgroundColor: "#EF3340" }} />
-            <div style={{ flex: 1, backgroundColor: "#009739" }} />
+          <div className="flag-bf">
+            <div className="flag-red" />
+            <div className="flag-green" />
           </div>
           <div>
-            <span style={{ fontWeight: 700, fontSize: "18px", letterSpacing: "0.5px" }}>SovereignMsg</span>
-            <span style={{ fontSize: "13px", marginLeft: "8px", opacity: 0.9, backgroundColor: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: "12px" }}>
+            <span className="font-bold text-lg tracking-wider">SovereignMsg</span>
+            <span className="role-badge">
               Back-Office {state.utilisateur?.role?.toUpperCase()}
             </span>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <span style={{ fontSize: "14px", opacity: 0.9 }}>
+        <div className="flex items-center space-x-3">
+          <span className="text-sm opacity-90 hidden sm:block">
             {state.utilisateur?.nom} ({state.utilisateur?.email})
           </span>
-          <Link
-            to="/"
-            style={{
-              color: "#fff",
-              textDecoration: "none",
-              fontSize: "13px",
-              backgroundColor: "rgba(255,255,255,0.15)",
-              padding: "6px 12px",
-              borderRadius: "6px",
-              fontWeight: 500,
-            }}
-          >
+          <Link to="/" className="nav-link-btn">
             💬 Messagerie E2EE
           </Link>
-          <button
-            onClick={deconnecter}
-            style={{
-              backgroundColor: "#EF3340",
-              color: "#fff",
-              border: "none",
-              padding: "6px 14px",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontSize: "13px",
-              fontWeight: 600,
-            }}
-          >
+          <button onClick={deconnecter} className="btn-logout">
             Déconnexion
           </button>
         </div>
       </header>
 
       {/* Barre de navigation d'administration */}
-      <nav
-        style={{
-          backgroundColor: "#fff",
-          borderBottom: "1px solid #E2E8F0",
-          padding: "0 24px",
-          display: "flex",
-          gap: "8px",
-        }}
-      >
+      <nav className="admin-nav">
         {navigation.map((item) => {
           const estActif = location.pathname === item.path;
           return (
             <Link
               key={item.path}
               to={item.path}
-              style={{
-                textDecoration: "none",
-                padding: "14px 16px",
-                fontSize: "14px",
-                fontWeight: estActif ? 600 : 500,
-                color: estActif ? "#009739" : "#475569",
-                borderBottom: estActif ? "2px solid #009739" : "2px solid transparent",
-                display: "inline-block",
-                transition: "all 0.2s ease",
-              }}
+              className={`admin-nav-item ${estActif ? "active" : ""}`}
             >
               {item.label}
             </Link>
@@ -128,8 +78,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, titre }) => 
       </nav>
 
       {/* Contenu principal */}
-      <main style={{ flex: 1, padding: "24px", maxWidth: "1200px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
-        <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#0F172A", marginBottom: "20px" }}>
+      <main className="admin-content">
+        <h1 className="admin-title">
           {titre}
         </h1>
         {children}
@@ -137,4 +87,3 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, titre }) => 
     </div>
   );
 };
-
