@@ -1,0 +1,32 @@
+{
+  "name": "sovereignmsg-client",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@matrix-org/matrix-sdk-crypto-wasm": "0.1.0-alpha.16",
+    "axios": "1.7.9",
+    "i18next": "24.2.0",
+    "matrix-js-sdk": "34.12.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-i18next": "15.4.0",
+    "react-router-dom": "6.28.1"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
+    "@vitejs/plugin-react": "4.3.4",
+    "typescript": "5.7.2",
+    "vite": "5.4.11",
+    "vite-plugin-pwa": "0.21.1",
+    "vite-plugin-top-level-await": "1.4.4",
+    "vite-plugin-wasm": "3.4.1"
+  }
+}
