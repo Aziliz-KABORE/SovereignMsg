@@ -19,6 +19,14 @@ import httpx
 from app.core.config import settings
 
 
+class SynapseRateLimited(Exception):
+    """Synapse rejected a login because its own rate limit is active."""
+
+    def __init__(self, retry_after: Optional[str] = None):
+        self.retry_after = retry_after
+        super().__init__("Synapse login rate limit active")
+
+
 class DeactivateResult(NamedTuple):
     """Résultat structuré de la désactivation Synapse."""
     success: bool
@@ -107,7 +115,11 @@ class SynapseClient:
                 response = client.post(url, json=payload)
                 if response.status_code == 200:
                     return response.json()
+                if response.status_code == 429:
+                    raise SynapseRateLimited(response.headers.get("Retry-After"))
                 return None
+            except SynapseRateLimited:
+                raise
             except httpx.HTTPError:
                 return None
 

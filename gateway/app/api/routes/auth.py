@@ -35,7 +35,7 @@ from app.core.security import (
     generate_matrix_password,
 )
 from app.core.audit import record_audit
-from app.core.synapse_client import synapse_client
+from app.core.synapse_client import synapse_client, SynapseRateLimited
 from app.models.models import Agent, ActivationToken
 from app.schemas.schemas import (
     ActivationRequest,
@@ -213,7 +213,9 @@ def login(
     db: Session = Depends(get_db)
 ):
     now = datetime.now(timezone.utc)
-    agent = db.query(Agent).filter(Agent.email == req.email).first()
+    # Serialize logins for this account so concurrent requests cannot consume
+    # the same TOTP counter before either transaction records it.
+    agent = db.query(Agent).filter(Agent.email == req.email).with_for_update().first()
 
     # 1. Anti-énumération temporelle : si l'utilisateur n'existe pas
     if not agent:
@@ -279,16 +281,11 @@ def login(
     totp_secret = decrypt_secret(agent.totp_secret_chiffre)
     clean_totp = req.code_totp.strip().replace(" ", "")
 
-    # Tolérance ergonomique démonstration : si l'utilisateur saisit directement le secret TOTP
-    if clean_totp.upper() == totp_secret.strip().upper():
-        is_totp_valid = True
-        step = int(now.timestamp() // 30)
-    else:
-        is_totp_valid, step = verify_totp_code(
-            secret=totp_secret,
-            code=clean_totp,
-            last_step=agent.totp_dernier_pas
-        )
+    is_totp_valid, step = verify_totp_code(
+        secret=totp_secret,
+        code=clean_totp,
+        last_step=agent.totp_dernier_pas
+    )
 
     if not is_totp_valid or step is None:
         agent.echecs_connexion += 1
@@ -322,11 +319,18 @@ def login(
     # Extraction du localpart Matrix (@agent_uuid:domain -> agent_uuid)
     localpart = agent.matrix_user_id.split(":")[0].lstrip("@")
 
-    synapse_res = synapse_client.login_user(
-        username=localpart,
-        password=matrix_password,
-        device_id=req.device_id
-    )
+    try:
+        synapse_res = synapse_client.login_user(
+            username=localpart,
+            password=matrix_password,
+            device_id=req.device_id
+        )
+    except SynapseRateLimited as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Le service de messagerie est temporairement limité. Réessayez plus tard.",
+            headers={"Retry-After": exc.retry_after} if exc.retry_after else None,
+        )
 
     # Si le compte Synapse doit être recréé ou synchronisé
     if not synapse_res:

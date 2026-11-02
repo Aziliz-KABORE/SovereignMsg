@@ -17,6 +17,7 @@ import jwt
 from app.core.config import settings
 from app.core.security import hash_token, generate_gateway_jwt
 from app.models.models import Agent, ActivationToken
+from app.core.synapse_client import SynapseRateLimited, synapse_client
 
 GENERIC_LOGIN_ERROR = "Identifiants invalides ou compte inaccessible."
 GENERIC_ACTIVATION_ERROR = "Jeton d'activation invalide ou expiré."
@@ -53,6 +54,19 @@ def test_login_wrong_totp(client, active_agent):
     assert response.json()["detail"] == GENERIC_LOGIN_ERROR
 
 
+def test_login_totp_secret_is_not_accepted_as_code(client, active_agent, test_totp_secret):
+    """The TOTP seed itself must never bypass one-time-code validation."""
+    response = client.post(
+        "/api/auth/login",
+        json={
+            "email": active_agent.email,
+            "mot_de_passe": "PasswordSecurise123!",
+            "code_totp": test_totp_secret
+        }
+    )
+    assert response.status_code == 422
+
+
 def test_login_totp_replay_rejected(client, active_agent, test_totp_secret):
     """Vérifie qu'un code TOTP déjà utilisé dans la même fenêtre temporelle est rejeté (anti-rejeu)."""
     totp = pyotp.TOTP(test_totp_secret)
@@ -80,6 +94,30 @@ def test_login_totp_replay_rejected(client, active_agent, test_totp_secret):
     )
     assert res2.status_code == 401
     assert res2.json()["detail"] == GENERIC_LOGIN_ERROR
+
+
+def test_login_synapse_rate_limit_is_reported_without_reprovisioning(
+    client, active_agent, test_totp_secret, monkeypatch
+):
+    def rate_limited(**_kwargs):
+        raise SynapseRateLimited("60")
+
+    reprovision_calls = []
+    monkeypatch.setattr(synapse_client, "login_user", rate_limited)
+    monkeypatch.setattr(synapse_client, "create_or_update_user", lambda **_kwargs: reprovision_calls.append(True))
+
+    response = client.post(
+        "/api/auth/login",
+        json={
+            "email": active_agent.email,
+            "mot_de_passe": "PasswordSecurise123!",
+            "code_totp": pyotp.TOTP(test_totp_secret).now(),
+        },
+    )
+
+    assert response.status_code == 503
+    assert response.headers["retry-after"] == "60"
+    assert reprovision_calls == []
 
 
 def test_login_unknown_account_same_response(client, test_totp_secret):

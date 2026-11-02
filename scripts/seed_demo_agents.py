@@ -64,15 +64,15 @@ def seed():
 
         # 1. Création ou mise à jour de l'utilisateur Matrix dans Synapse
         try:
-            print(f"[*] Provisionnement Matrix pour {matrix_user_id}...")
+            print("[*] Provisionnement d'un compte Matrix...")
             synapse_client.create_or_update_user(
                 matrix_user_id=matrix_user_id,
                 displayname=acc["nom"],
                 password=matrix_pass
             )
-            print(f"[+] Utilisateur Matrix créé avec succès : {matrix_user_id}")
+            print("[+] Compte Matrix provisionné.")
         except Exception as e:
-            print(f"[!] Erreur provisionnement Matrix pour {matrix_user_id}: {e}")
+            print("[!] Échec du provisionnement Matrix.")
 
         # 2. Création ou mise à jour dans PostgreSQL
         existing = db.query(Agent).filter(Agent.email == acc["email"]).first()
@@ -85,7 +85,7 @@ def seed():
             existing.matrix_password_chiffre = encrypt_secret(matrix_pass)
             existing.echecs_connexion = 0
             existing.verrouille_jusqua = None
-            print(f"[i] Compte mis à jour en base : {acc['email']}")
+            print("[i] Compte mis à jour en base.")
         else:
             agent = Agent(
                 id=uuid.uuid4(),
@@ -102,7 +102,7 @@ def seed():
                 date_creation=datetime.now(timezone.utc),
             )
             db.add(agent)
-            print(f"[+] Agent créé en base : {acc['email']} | Rôle: {acc['role']}")
+            print("[+] Compte créé en base.")
 
     db.commit()
     db.close()

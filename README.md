@@ -119,24 +119,9 @@ Ouvrir **https://localhost/connexion** dans le navigateur.
 
 ---
 
-## Comptes de démonstration
+## Connexion et code TOTP
 
-Tous les comptes partagent le même secret TOTP pour simplifier les tests. En production, chaque agent a un secret unique généré lors de l'activation.
-
-| Rôle | Email | Mot de passe | Secret TOTP |
-|---|---|---|---|
-| **Administrateur** | `admin@gouv.bf` | `AdminDemo2026!#` | `JBSWY3DPEHPK3PXP` |
-| Agent A (Sécurité) | `agent.a@gouv.bf` | `AgentADemo2026!#` | `JBSWY3DPEHPK3PXP` |
-| Agent B (Défense) | `agent.b@gouv.bf` | `AgentBDemo2026!#` | `JBSWY3DPEHPK3PXP` |
-| Agent C (Témoin) | `agent.c@gouv.bf` | `AgentCDemo2026!#` | `JBSWY3DPEHPK3PXP` |
-
-**Obtenir un code TOTP à 6 chiffres :**
-
-- Sur téléphone : ajouter le secret `JBSWY3DPEHPK3PXP` dans Google Authenticator ou FreeOTP.
-- En ligne de commande :
-  ```bash
-  docker exec sovereign-gateway python -c "import pyotp; print(pyotp.TOTP('JBSWY3DPEHPK3PXP').now())"
-  ```
+Les identifiants sont remis individuellement lors de l'enrôlement. Configurez le code TOTP en scannant le QR code fourni à l'activation. Les secrets TOTP ne sont pas publiés dans la documentation.
 
 ---
 

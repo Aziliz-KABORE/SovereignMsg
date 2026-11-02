@@ -37,7 +37,7 @@ class ActivationConfirmResponse(BaseModel):
 class LoginRequest(BaseModel):
     email: str = Field(..., pattern=EMAIL_PATTERN, description="Adresse e-mail professionnelle de l'agent")
     mot_de_passe: str = Field(..., description="Mot de passe de l'agent")
-    code_totp: str = Field(..., min_length=4, max_length=64, description="Code TOTP à 6 chiffres ou secret de test")
+    code_totp: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$", description="Code TOTP à 6 chiffres")
     device_id: Optional[str] = Field(None, description="Identifiant unique de l'appareil (optionnel, persistant)")
 
 

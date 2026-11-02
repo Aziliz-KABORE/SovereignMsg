@@ -89,7 +89,7 @@ L'architecture applique rigoureusement le principe de défense en profondeur et 
 
 ### C. Validation Expérimentale sur Pile Réelle (Protocole B.2)
 Le protocole de test B.2 a été exécuté et validé avec succès sur les conteneurs réels (`scripts/test_protocole_b2.py`) :
-- Création d'un groupe opérationnel chiffré entre 3 agents (`agent.a@gouv.bf`, `agent.b@gouv.bf`, `agent.c@gouv.bf`).
+- Création d'un groupe opérationnel chiffré entre 3 agents (three enrolled agents).
 - Vérification de l'état `m.room.encryption` dans Synapse : `m.megolm.v1.aes-sha2`.
 - Révocation administrative de l'Agent B :
   - Login refusé immédiatement (HTTP 401).

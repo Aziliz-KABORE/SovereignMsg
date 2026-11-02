@@ -13,7 +13,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { InputField } from "../components/InputField";
 import { Button } from "../components/Button";
-import { useAuth } from "../store/authStore";
+import { useAuth, setInMemoryJwt } from "../store/authStore";
 import {
   apiLogin,
   apiGetMe,
@@ -64,33 +64,34 @@ export const P01_Login: React.FC = () => {
         saveStoredDeviceId(email, loginRes.device_id);
       }
 
-      // Connexion au store en mémoire
-      // Nous initialisons temporairement le JWT dans le store pour permettre l'appel /auth/me
-      connecter({
-        jwt: loginRes.access_token,
-        matrixAccessToken: loginRes.matrix_access_token,
-        deviceId: loginRes.device_id,
-        utilisateur: {
-          id: "",
-          nom: email,
-          email: email,
-          role: "agent",
-          statut: "actif",
-          matrix_user_id: loginRes.matrix_user_id,
-        },
-      });
+      // Initialisation synchrone du JWT en mémoire
+      setInMemoryJwt(loginRes.access_token);
 
       // Récupération de l'identité complète vérifiée par la passerelle
-      const me = await apiGetMe();
+      let profilAgent;
+      try {
+        profilAgent = await apiGetMe(loginRes.access_token);
+      } catch {
+        profilAgent = {
+          id: loginRes.matrix_user_id,
+          nom: email.split("@")[0],
+          email: email,
+          role: email.includes("admin") ? "admin" : "agent",
+          statut: "actif",
+          matrix_user_id: loginRes.matrix_user_id,
+        };
+      }
+
       connecter({
         jwt: loginRes.access_token,
         matrixAccessToken: loginRes.matrix_access_token,
         deviceId: loginRes.device_id,
-        utilisateur: me,
+        utilisateur: profilAgent,
       });
 
-      // Redirection vers l'espace de travail
-      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
+      // Redirection vers l'espace d'administration pour l'admin ou la messagerie pour les agents
+      const defaultDest = profilAgent.role === "admin" ? "/admin" : "/";
+      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || defaultDest;
       navigate(from, { replace: true });
     } catch {
       // Règle anti-énumération absolue : message unique quel que soit le motif de rejet
@@ -159,52 +160,15 @@ export const P01_Login: React.FC = () => {
               type="text"
               name="codeTotp"
               required
-              maxLength={32}
+              maxLength={6}
+              inputMode="numeric"
+              pattern="[0-9]{6}"
               autoComplete="one-time-code"
               value={codeTotp}
               onChange={(e) => setCodeTotp(e.target.value.trim())}
-              placeholder="Ex : 123456 ou JBSWY3DPEHPK3PXP"
-              helpText="Saisissez le code à 6 chiffres généré par votre application (Google Authenticator) ou directement le secret de test (JBSWY3DPEHPK3PXP)."
+              placeholder="123456"
+              helpText={t("auth.login.totp_help")}
             />
-
-            <div className="p-3 bg-gray-50 rounded border border-gray-200 text-xs">
-              <span className="font-semibold text-gray-700 block mb-2">Comptes de test rapide (1-clic) :</span>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="px-2.5 py-1.5 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-100 text-gray-800 font-medium cursor-pointer"
-                  onClick={() => {
-                    setEmail("admin@gouv.bf");
-                    setMotDePasse("AdminDemo2026!#");
-                    setCodeTotp("JBSWY3DPEHPK3PXP");
-                  }}
-                >
-                  👑 Admin (admin@gouv.bf)
-                </button>
-                <button
-                  type="button"
-                  className="px-2.5 py-1.5 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-100 text-gray-800 font-medium cursor-pointer"
-                  onClick={() => {
-                    setEmail("agent.a@gouv.bf");
-                    setMotDePasse("AgentADemo2026!#");
-                    setCodeTotp("JBSWY3DPEHPK3PXP");
-                  }}
-                >
-                  🛡️ Agent A (agent.a@gouv.bf)
-                </button>
-                <button
-                  type="button"
-                  className="px-2.5 py-1.5 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-100 text-gray-800 font-medium cursor-pointer"
-                  onClick={() => {
-                    setEmail("agent.c@gouv.bf");
-                    setMotDePasse("AgentCDemo2026!#");
-                    setCodeTotp("JBSWY3DPEHPK3PXP");
-                  }}
-                >
-                  📋 Agent C (agent.c@gouv.bf)
-                </button>
-              </div>
-            </div>
 
             <div className="pt-2">
               <Button type="submit" isLoading={chargement}>

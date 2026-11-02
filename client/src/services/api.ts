@@ -189,8 +189,9 @@ export const apiActivationConfirm = async (payload: ActivationConfirmPayload): P
   return data;
 };
 
-export const apiGetMe = async (): Promise<AgentProfil> => {
-  const { data } = await apiClient.get<AgentProfil>("/auth/me");
+export const apiGetMe = async (customToken?: string): Promise<AgentProfil> => {
+  const headers = customToken ? { Authorization: `Bearer ${customToken}` } : undefined;
+  const { data } = await apiClient.get<AgentProfil>("/auth/me", { headers });
   return data;
 };
 

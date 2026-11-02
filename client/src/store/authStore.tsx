@@ -53,11 +53,16 @@ let callbackDeconnexion: (() => void) | null = null;
 
 export const getInMemoryJwt = (): string | null => jwtEnMemoire;
 
+export const setInMemoryJwt = (jwt: string | null) => {
+  jwtEnMemoire = jwt;
+};
+
 export const enregistrerCallbackDeconnexion = (fn: () => void) => {
   callbackDeconnexion = fn;
 };
 
 export const declencherDeconnexionExterne = () => {
+  jwtEnMemoire = null;
   if (callbackDeconnexion) {
     callbackDeconnexion();
   }
@@ -122,12 +127,14 @@ export const AuthProvider: React.FC<{
       deviceId: string;
       utilisateur: Utilisateur;
     }) => {
+      jwtEnMemoire = payload.jwt;
       dispatch({ type: "CONNECTER", payload });
     },
     []
   );
 
   const deconnecter = React.useCallback(() => {
+    jwtEnMemoire = null;
     dispatch({ type: "DECONNECTER" });
   }, []);
 

@@ -23,9 +23,8 @@ Ce document détaille le déroulé pas-à-pas pour enregistrer la vidéo de dém
   - Navigateur sur `https://localhost/connexion` (mode plein écran 1080p ou 1280px).
   - Carte sobre aux couleurs nationales, champs `Email`, `Mot de passe`, `Code TOTP`.
 - **Actions du présentateur** :
-  - Saisir l'identifiant : `admin@gouv.bf`
-  - Saisir le mot de passe : `AdminDemo2026!#`
-  - Saisir le code TOTP (généré via Google Authenticator avec secret `JBSWY3DPEHPK3PXP` ou la commande CLI).
+  - Saisir les identifiants du compte administrateur de demonstration.
+  - Saisir le code TOTP courant fourni par l'application d'authentification de l'utilisateur enrôlé.
   - Cliquer sur **Se connecter**.
 - **Script Voix-Off (Suggestion)** :
   > *"Bonjour. Nous vous présentons SovereignMsg, la messagerie instantanée souveraine pour l'administration publique burkinabè. L'accès est strictement conditionné à un enrôlement préalable par la passerelle d'identité. La connexion exige une authentification multi-facteurs combinant hachage mémoire-dur Argon2id et code dynamique TOTP. Le serveur Synapse Matrix n'est jamais exposé directement : toutes les requêtes sont filtrées par notre passerelle sécurisée."*
@@ -38,10 +37,10 @@ Ce document détaille le déroulé pas-à-pas pour enregistrer la vidéo de dém
   - Vue sur le **Tableau de Bord (P13)** : compteurs d'agents actifs, en attente et révoqués.
   - Clic sur l'onglet **Agents (P14)** montrant la liste des fonctionnaires enrôlés.
 - **Actions du présentateur** :
-  - Montrer rapidement les agents `agent.a@gouv.bf`, `agent.b@gouv.bf` et `agent.c@gouv.bf`.
+  - Afficher les agents inscrits sans exposer leurs identifiants.
   - Naviguer vers la création d'un groupe ou montrer l'appel de création du salon opérationnel :
     - Nom : `Cellule de Crise Sécuritaire`
-    - Membres : `agent.a@gouv.bf`, `agent.b@gouv.bf`, `agent.c@gouv.bf`.
+    - Membres: selectionner les trois agents inscrits dans l interface.
 - **Script Voix-Off (Suggestion)** :
   > *"Depuis le back-office d'administration, les responsables de sécurité supervisent les agents actifs et les autorisations. Créons un nouveau salon opérationnel. Point capital d'architecture : le chiffrement de groupe Megolm est activé dès l'état initial du salon, de manière irrévocable. Seuls les agents actifs et dûment enrôlés peuvent être invités ; tout compte inconnu ou révoqué est systématiquement rejeté par la passerelle."*
 
@@ -62,7 +61,6 @@ Ce document détaille le déroulé pas-à-pas pour enregistrer la vidéo de dém
 ### Séquence 4 : Révocation Immédiate d'un Agent (2:00 - 2:35)
 - **Ce qui est affiché à l'écran** :
   - Retour sur le panneau d'administration : `https://localhost/admin/agents`.
-  - Clic sur la fiche détaillée de l'**Agent B** (`agent.b@gouv.bf`).
 - **Actions du présentateur** :
   - Cliquer sur le bouton rouge **Révoquer l'agent**.
   - Confirmer dans la boîte de dialogue modale.
@@ -77,9 +75,7 @@ Ce document détaille le déroulé pas-à-pas pour enregistrer la vidéo de dém
 - **Ce qui est affiché à l'écran** :
   - Fenêtre de navigation privée ou déconnexion vers `https://localhost/connexion`.
   - Tentative de connexion de l'Agent B :
-    - Email : `agent.b@gouv.bf`
-    - Mot de passe : `AgentBDemo2026!#`
-    - Code TOTP : `604084` (ou code en cours).
+    - Code TOTP : saisir le code courant de son application.
   - Clic sur **Se connecter**.
   - Message d'erreur immédiat : `Identifiants invalides ou compte inaccessible.`
 - **Actions du présentateur** :
@@ -94,8 +90,8 @@ Ce document détaille le déroulé pas-à-pas pour enregistrer la vidéo de dém
 
 1. **Terminal prêt à afficher les logs ou codes TOTP** :
    ```powershell
-   # Obtenir le code TOTP à tout moment en direct :
-   docker exec sovereign-gateway python -c "import pyotp; print(pyotp.TOTP('JBSWY3DPEHPK3PXP').now())"
+   # Générer un code uniquement à partir d'un secret provisionné de manière sécurisée.
+   python demo/generate_totp.py
    ```
 2. **Réinitialiser l'état de démonstration avant la vidéo** (si besoin) :
    ```powershell
